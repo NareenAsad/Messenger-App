@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "453885849443",
+    "project_id": "msgapp-35107",
+    "storage_bucket": "msgapp-35107.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453885849443:android:d71078389ad1278268ad56",
+        "android_client_info": {
+          "package_name": "com.example.firstmessageapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc1-W99QuOeLPLCmKZ0ehp69Hf7kEK3uo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
