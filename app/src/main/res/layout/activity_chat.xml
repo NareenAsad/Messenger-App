@@ -58,7 +58,7 @@
         android:padding="8dp"
         android:scrollbars="none"
         android:orientation="horizontal"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="20dp" />
 
     <!-- Search Bar -->
     <EditText

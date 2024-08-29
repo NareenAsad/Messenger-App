@@ -41,7 +41,6 @@ class ChatsActivity : AppCompatActivity() {
         // Handle clicks
         ivAddChat.setOnClickListener {
             // Navigate to PersonalChatActivity when "Add Chat" is clicked
-            startActivity(Intent(this, PersonalChatActivity::class.java))
         }
 
         ivMenu.setOnClickListener {
@@ -68,9 +67,9 @@ class ChatsActivity : AppCompatActivity() {
 
     private fun setupChatListRecyclerView() {
         val chats = listOf(
-            Chat("John Doe", "Hey, how's it going?", "10:30 AM", 2, "https://example.com/john_profile.jpg"),
-            Chat("Jane Smith", "Let's meet up later.", "9:45 AM", 0, "https://example.com/jane_profile.jpg"),
-            Chat("Alice Johnson", "Did you get my email?", "8:20 AM", 5, "https://example.com/alice_profile.jpg")
+            Chat("John Doe", "Hey, how's it going?", "10:30 AM", 2, "https://example.com/john_profile.jpg", "uid_1"),
+            Chat("Jane Smith", "Let's meet up later.", "9:45 AM", 0, "https://example.com/jane_profile.jpg", "uid_2"),
+            Chat("Alice Johnson", "Did you get my email?", "8:20 AM", 5, "https://example.com/alice_profile.jpg", "uid_3")
             // Add more chats as needed
         )
 

@@ -40,19 +40,10 @@
         android:id="@+id/phoneTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="+92 364 - 1710 - 1920"
+        android:text="+92 364 - 748 - 94606"
         android:textSize="14sp"
         app:layout_constraintTop_toBottomOf="@id/nameTextView"
         app:layout_constraintStart_toStartOf="@id/nameTextView"/>
-
-    <ImageView
-        android:id="@+id/chevronImageView"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_chevron_right"
-        app:layout_constraintTop_toTopOf="@id/profileImageView"
-        app:layout_constraintBottom_toBottomOf="@id/profileImageView"
-        app:layout_constraintEnd_toEndOf="parent"/>
 
     <ListView
         android:id="@+id/settingsListView"
@@ -64,7 +55,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"/>
-
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"

@@ -26,7 +26,7 @@
     <string name="__1">1</string>
     <string name="__7">7</string>
     <string name="first_name_required">First Name (Required)</string>
-    <string name="last_name_optional">Last Name (Optional)</string>
+    <string name="last_name_optional">Last Name (Required)</string>
     <string name="your_profile">Your Profile</string>
     <string name="profileimg">profileimg</string>
     <string name="save">Save</string>

@@ -1,5 +1,6 @@
 package com.example.firstmessageapp
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,6 +36,16 @@ class ChatListAdapter(private val chats: List<Chat>) : RecyclerView.Adapter<Chat
             Picasso.get().load(chat.profileImageUrl).into(holder.profileImage)
         } else {
             holder.profileImage.setImageResource(R.drawable.profile_placeholder) // Fallback image
+        }
+
+        // Handle item click to navigate to PersonalChatActivity
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(context, PersonalChatActivity::class.java).apply {
+                putExtra("name", chat.name)
+                putExtra("uid", chat.uid)
+            }
+            context.startActivity(intent)
         }
     }
 
