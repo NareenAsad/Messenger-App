@@ -26,9 +26,10 @@ class ChatListAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<Chat
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val chat = chats[position]
-        holder.name.text = chat.name
-        holder.lastMessage.text = chat.lastMessage
-        holder.timestamp.text = chat.timestamp
+
+        holder.name.text = chat.name ?: "Unknown"
+        holder.lastMessage.text = chat.lastMessage ?: "No messages"
+        holder.timestamp.text = chat.timestamp ?: "No timestamp"
         holder.unreadCount.text = chat.unreadCount.toString()
 
         // Load profile image if available
@@ -43,7 +44,7 @@ class ChatListAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<Chat
             val context = holder.itemView.context
             val intent = Intent(context, PersonalChatActivity::class.java).apply {
                 putExtra("name", chat.name)
-                putExtra("uid", chat.uid)
+                putExtra("uid", chat.userId)
             }
             context.startActivity(intent)
         }
