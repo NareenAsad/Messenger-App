@@ -3,6 +3,8 @@ package com.example.firstmessageapp
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -10,99 +12,51 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 class ContactsActivity : AppCompatActivity() {
-    private lateinit var db: FirebaseFirestore
+
+    private lateinit var recyclerView: RecyclerView
     private lateinit var contactsAdapter: ContactsAdapter
+    private lateinit var contactsList: ArrayList<User>
     private lateinit var bottomNavigation: BottomNavigationView
-    private lateinit var auth: FirebaseAuth
+    private lateinit var firestore: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_contact)
+        setContentView(R.layout.activity_contacts)
 
-        // Initialize Firestore and Firebase Auth
-        db = Firebase.firestore
-        auth = FirebaseAuth.getInstance()
+        recyclerView = findViewById(R.id.recyclerViewContacts)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        contactsList = ArrayList()
 
-        // Initialize RecyclerView and Adapter
-        setupRecyclerView()
+        contactsAdapter = ContactsAdapter(contactsList) { user ->
+            val intent = Intent(this, ChatsActivity::class.java)
+            intent.putExtra("userId", user.userId)
+            startActivity(intent)
+        }
+        recyclerView.adapter = contactsAdapter
 
-        // Load Contacts from Firestore
-        loadContacts()
+        firestore = Firebase.firestore // Initialize Firestore
+
+        fetchUsersFromFirestore()
 
         // Initialize and set up Bottom Navigation
         bottomNavigation = findViewById(R.id.bottom_navigation)
         setupBottomNavigation()
 
-        // Set up Add Contact functionality
-        val plusIcon: ImageView = findViewById(R.id.plus_icon)
-        plusIcon.setOnClickListener {
-            showAddContactDialog()
-        }
-    }
-
-    private fun saveContact(contact: Contact) {
-        // Saving contact to Firestore
-        db.collection("users")
-            .add(contact)
-            .addOnSuccessListener { documentReference ->
-                Toast.makeText(this, "Contact added successfully!", Toast.LENGTH_SHORT).show()
-                loadContacts()
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Error adding contact: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun loadContacts() {
-        val currentUserId = auth.currentUser?.uid ?: return
-
-        db.collection("users")
-            .get()
-            .addOnSuccessListener { result ->
-                val contacts = result.mapNotNull { document ->
-                    val userId = document.id
-                    if (userId != currentUserId) {
-                        val name = document.getString("name") ?: ""
-                        val phoneNumber = document.getString("phoneNumber") ?: ""
-                        val profileImageUrl = document.getString("profileImageUrl")
-                        Contact(userId, name, phoneNumber, profileImageUrl)
-                    } else null
-                }
-                contactsAdapter.updateContacts(contacts)
-            }
-            .addOnFailureListener { exception ->
-                Toast.makeText(this, "Error loading contacts: ${exception.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun setupRecyclerView() {
-        val contactsRecyclerView: RecyclerView = findViewById(R.id.contactsRecyclerView)
-        contactsAdapter = ContactsAdapter(mutableListOf()) { contact ->
-            startChat(contact)
-        }
-        contactsRecyclerView.adapter = contactsAdapter
-        contactsRecyclerView.layoutManager = LinearLayoutManager(this)
-    }
-
-    private fun startChat(contact: Contact) {
-        val intent = Intent(this, PersonalChatActivity::class.java)
-        intent.putExtra("contactName", contact.name)
-        intent.putExtra("contactId", contact.id)
-        startActivity(intent)
+        // Initialize search and add contact functionality
+        setupSearchFunctionality()
+        setupAddContactFunctionality()
     }
 
     private fun setupBottomNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.navigation_contacts -> {
-                    // Current activity, no need to restart
-                    true
-                }
+                R.id.navigation_contacts -> true
                 R.id.navigation_search -> {
                     val intent = Intent(this, ChatsActivity::class.java)
                     startActivity(intent)
@@ -118,29 +72,83 @@ class ContactsActivity : AppCompatActivity() {
         }
     }
 
+    private fun fetchUsersFromFirestore() {
+        firestore.collection("users").get().addOnSuccessListener { result ->
+            val newContactsList = ArrayList<User>()
+            for (document in result) {
+                val user = document.toObject(User::class.java)
+                newContactsList.add(user)
+            }
+            contactsAdapter.updateContacts(newContactsList)
+        }.addOnFailureListener { exception ->
+            Toast.makeText(this, "Failed to load contacts: ${exception.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupSearchFunctionality() {
+        val searchInput: EditText = findViewById(R.id.searchInput)
+        searchInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                filterContacts(s.toString())
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+    }
+
+    private fun filterContacts(query: String) {
+        val filteredList = contactsList.filter {
+            it.name.contains(query, ignoreCase = true) || it.phoneNumber.contains(query)
+        }
+        contactsAdapter.updateContacts(filteredList)
+    }
+
+    private fun setupAddContactFunctionality() {
+        val addContactIcon: ImageView = findViewById(R.id.plus_icon)
+        addContactIcon.setOnClickListener {
+            showAddContactDialog()
+        }
+    }
+
     private fun showAddContactDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_contact, null)
-        val nameInput: EditText = dialogView.findViewById(R.id.contactNameInput)
-        val phoneInput: EditText = dialogView.findViewById(R.id.contactPhoneInput)
-
-        AlertDialog.Builder(this)
-            .setTitle("Add New Contact")
+        val dialogBuilder = AlertDialog.Builder(this)
             .setView(dialogView)
-            .setPositiveButton("Add") { dialog, _ ->
-                val name = nameInput.text.toString().trim()
-                val phoneNumber = phoneInput.text.toString().trim()
+            .setTitle("Add New Contact")
 
-                if (name.isNotEmpty() && phoneNumber.isNotEmpty()) {
-                    val newContact = Contact("", name, phoneNumber)
-                    saveContact(newContact)
-                } else {
-                    Toast.makeText(this, "Please fill out all fields", Toast.LENGTH_SHORT).show()
-                }
+        val alertDialog = dialogBuilder.show()
 
-                dialog.dismiss()
+        val nameEditText: EditText = dialogView.findViewById(R.id.editTextName)
+        val phoneEditText: EditText = dialogView.findViewById(R.id.editTextPhone)
+        val saveButton: Button = dialogView.findViewById(R.id.buttonSave)
+
+        saveButton.setOnClickListener {
+            val name = nameEditText.text.toString()
+            val phone = phoneEditText.text.toString()
+
+            if (name.isNotEmpty() && phone.isNotEmpty()) {
+                val newUser = User(
+                    userId = FirebaseAuth.getInstance().uid ?: "",
+                    name = name,
+                    phoneNumber = phone
+                )
+                saveUserToFirestore(newUser)
+                alertDialog.dismiss()
+            } else {
+                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Cancel", null)
-            .create()
-            .show()
+        }
+    }
+
+    private fun saveUserToFirestore(user: User) {
+        firestore.collection("users").document(user.userId).set(user).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(this, "Contact added successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to add contact", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

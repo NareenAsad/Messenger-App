@@ -1,9 +1,9 @@
 package com.example.firstmessageapp
 
 import android.os.Bundle
+import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -13,97 +13,72 @@ import com.google.firebase.database.DatabaseReference
 
 class PersonalChatActivity : AppCompatActivity() {
 
-    private lateinit var chatRecyclerView: RecyclerView
-    private lateinit var messageBox: EditText
-    private lateinit var sendButton: ImageView
-    private lateinit var messageAdapter: MessageAdapter
-    private lateinit var messageList: ArrayList<Message>
-    private lateinit var mDbRef: DatabaseReference
-    private lateinit var backButton: ImageView
-    private lateinit var chatUsername: TextView
-    private lateinit var icSearch: ImageView
-    private lateinit var icMenu: ImageView
-
-    private var receiverRoom: String? = null
-    private var senderRoom: String? = null
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var chatAdapter: PersonalChatAdapter // Corrected this line
+    private lateinit var messageEditText: EditText
+    private lateinit var sendButton: Button
+    private lateinit var messagesList: ArrayList<Message>
+    private lateinit var database: DatabaseReference
+    private lateinit var currentUserId: String
+    private lateinit var chatUserId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_personal_chat)
 
-        // Retrieve data from intent
-        val name = intent.getStringExtra("contactName")
-        val receiverUid = intent.getStringExtra("contactId")
-        val senderUid = FirebaseAuth.getInstance().currentUser?.uid
-
-        // Initialize Firebase Database
-        mDbRef = FirebaseDatabase.getInstance().reference
-
-        senderRoom = receiverUid + senderUid
-        receiverRoom = senderUid + receiverUid
-
-        // Initialize views
-        chatRecyclerView = findViewById(R.id.chatRecyclerView)
-        messageBox = findViewById(R.id.messageBox)
+        recyclerView = findViewById(R.id.chatRecyclerView)
+        messageEditText = findViewById(R.id.messageBox)
         sendButton = findViewById(R.id.sentButton)
-        backButton = findViewById(R.id.backButton)
-        chatUsername = findViewById(R.id.chat_username)
-        icSearch = findViewById(R.id.icSearch)
-        icMenu = findViewById(R.id.icMenu)
-        messageList = ArrayList()
-        messageAdapter = MessageAdapter(this, messageList)
+        messagesList = ArrayList()
 
-        // Set up the RecyclerView
-        chatRecyclerView.layoutManager = LinearLayoutManager(this)
-        chatRecyclerView.adapter = messageAdapter
+        chatUserId = intent.getStringExtra("userId")!!
+        currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-        // Set the username in the header
-        chatUsername.text = name
+        chatAdapter = PersonalChatAdapter(messagesList) // Corrected this line
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = chatAdapter
 
-        // Handle back button click
-        backButton.setOnClickListener {
-            finish()
-        }
+        database = FirebaseDatabase.getInstance().reference
 
-        // Handle search and menu button clicks
-        icSearch.setOnClickListener { /* Implement search functionality */ }
-        icMenu.setOnClickListener { /* Implement menu functionality */ }
-
-        // Listen for new messages
-        mDbRef.child("chats").child(senderRoom!!).child("messages")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    messageList.clear()
-                    for (postSnapshot in snapshot.children) {
-                        val message = postSnapshot.getValue(Message::class.java)
-                        if (message != null) {
-                            messageList.add(message)
-                        }
-                    }
-                    messageAdapter.notifyDataSetChanged()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle possible errors
-                }
-            })
-
-        // Send a new message
         sendButton.setOnClickListener {
-            val message = messageBox.text.toString().trim()
-            if (message.isNotEmpty()) {
-                val messageObject = Message(message, senderUid!!)
-
-                // Push message to the sender's chat room
-                mDbRef.child("chats").child(senderRoom!!).child("messages").push()
-                    .setValue(messageObject)
-                    .addOnSuccessListener {
-                        // Push the same message to the receiver's chat room
-                        mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
-                            .setValue(messageObject)
-                    }
-                messageBox.setText("")
+            val messageText = messageEditText.text.toString().trim()
+            if (messageText.isNotEmpty()) {
+                sendMessage(messageText)
             }
         }
+
+        listenForMessages()
+    }
+
+    private fun sendMessage(messageText: String) {
+        val message = Message(currentUserId, messageText)
+        val chatId = getChatId(currentUserId, chatUserId)
+        database.child("chats").child(chatId).push().setValue(message)
+        messageEditText.text.clear() // Clear the message box after sending
+    }
+
+    private fun listenForMessages() {
+        val chatId = getChatId(currentUserId, chatUserId)
+        database.child("chats").child(chatId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                messagesList.clear()
+                for (dataSnapshot in snapshot.children) {
+                    val message = dataSnapshot.getValue(Message::class.java)
+                    if (message != null) {
+                        messagesList.add(message)
+                    }
+                }
+                chatAdapter.notifyDataSetChanged()
+                recyclerView.scrollToPosition(messagesList.size - 1)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@PersonalChatActivity, "Failed to load messages: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun getChatId(userId1: String, userId2: String): String {
+        return if (userId1 < userId2) "$userId1-$userId2" else "$userId2-$userId1"
     }
 }

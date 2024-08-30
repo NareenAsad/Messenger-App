@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToVerificationActivity() {
-        val intent = Intent(this, VerificationPhoneActivity::class.java)
+        val intent = Intent(this, PhoneAuthActivity::class.java)
         startActivity(intent)
         finish() // This will close the MainActivity so the user can't go back to it
     }

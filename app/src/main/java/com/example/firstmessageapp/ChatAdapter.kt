@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import de.hdodenhof.circleimageview.CircleImageView
 import com.squareup.picasso.Picasso
 
-class ChatListAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<ChatListAdapter.ChatViewHolder>() {
+class ChatAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
     class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: CircleImageView = itemView.findViewById(R.id.imgProfile)

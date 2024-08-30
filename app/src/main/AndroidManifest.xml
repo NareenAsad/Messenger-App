@@ -27,8 +27,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MessengerApp"
         tools:targetApi="31">
-        <activity android:name=".VerificationPhoneActivity"></activity>
-        <activity android:name=".VerificationCodeActivity"></activity>
+        <activity android:name=".PhoneAuthActivity"></activity>
+        <activity android:name=".VerifyCodeActivity"></activity>
         <activity android:name=".ProfileActivity"></activity>
         <activity android:name=".ContactsActivity"></activity>
         <activity android:name=".ChatsActivity"></activity>

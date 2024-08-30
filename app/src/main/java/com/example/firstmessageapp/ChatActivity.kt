@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.firestore.FirebaseFirestore
 
-class ChatsActivity : AppCompatActivity() {
+class ChatActivity : AppCompatActivity() {
 
     private lateinit var tvChatsTitle: TextView
     private lateinit var ivAddChat: ImageView
@@ -25,7 +25,7 @@ class ChatsActivity : AppCompatActivity() {
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var stories: MutableList<Story>
     private lateinit var firestore: FirebaseFirestore
-    private lateinit var chatListAdapter: ChatListAdapter
+    private lateinit var chatListAdapter: ChatAdapter
 
     // Request code for media selection
     private val PICK_MEDIA_REQUEST_CODE = 101
@@ -53,11 +53,12 @@ class ChatsActivity : AppCompatActivity() {
         // Handle clicks
         ivAddChat.setOnClickListener {
             // Navigate to PersonalChatActivity when "Add Chat" is clicked
+            val intent = Intent(this, PersonalChatActivity::class.java)
+            startActivity(intent)
         }
 
         ivMenu.setOnClickListener {
             // Handle menu click - you can implement a popup menu or navigate to another activity
-            // Example: showing a toast message
             showMenuOptions()
         }
 
@@ -79,7 +80,7 @@ class ChatsActivity : AppCompatActivity() {
     private fun setupChatListRecyclerView() {
         // Initialize the RecyclerView
         rvChatList.layoutManager = LinearLayoutManager(this)
-        chatListAdapter = ChatListAdapter(emptyList()) // Start with an empty list
+        chatListAdapter = ChatAdapter(emptyList()) // Start with an empty list
         rvChatList.adapter = chatListAdapter
 
         // Fetch chat data from Firestore
@@ -90,7 +91,7 @@ class ChatsActivity : AppCompatActivity() {
         firestore.collection("chats")
             .get()
             .addOnSuccessListener { querySnapshot ->
-                Log.d("ChatsActivity", "Query Snapshot: ${querySnapshot.documents}")
+                Log.d("ChatActivity", "Query Snapshot: ${querySnapshot.documents}")
                 val chatList = querySnapshot.documents.mapNotNull { document ->
                     document.toObject(Chat::class.java)
                 }
@@ -101,7 +102,6 @@ class ChatsActivity : AppCompatActivity() {
             }
     }
 
-
     private fun setupBottomNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -110,7 +110,7 @@ class ChatsActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_search -> {
-                    startActivity(Intent(this, ChatsActivity::class.java))
+                    startActivity(Intent(this, ChatActivity::class.java))
                     true
                 }
                 R.id.navigation_more -> {
@@ -132,7 +132,6 @@ class ChatsActivity : AppCompatActivity() {
 
     private fun showMenuOptions() {
         // Implement a popup menu or other menu options as needed
-        // Example: Showing a simple toast message
         Toast.makeText(this, "Menu clicked!", Toast.LENGTH_SHORT).show()
     }
 
@@ -151,10 +150,7 @@ class ChatsActivity : AppCompatActivity() {
 
             // Check if the selected media URI is not null
             if (selectedMediaUri != null) {
-                // Create a new Story with the selected media URI
                 val newStory = Story("New Story", selectedMediaUri.toString())
-
-                // Add the new story to the list
                 addStory(newStory)
 
                 // Optionally, show a message to the user

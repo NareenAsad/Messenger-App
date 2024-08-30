@@ -5,18 +5,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
 class ContactsAdapter(
-    private val contacts: MutableList<Contact>,
-    private val onContactClick: (Contact) -> Unit
+    private var contacts: List<User>,
+    private val onContactClick: (User) -> Unit
 ) : RecyclerView.Adapter<ContactsAdapter.ContactViewHolder>() {
 
-    class ContactViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val profileImageView: ImageView = view.findViewById(R.id.contactImageView)
-        val nameTextView: TextView = view.findViewById(R.id.contactName)
-        val phoneTextView: TextView = view.findViewById(R.id.contactPhone)
+    fun updateContacts(newContacts: List<User>) {
+        val diffResult = DiffUtil.calculateDiff(UserDiffCallback(contacts, newContacts))
+        contacts = newContacts
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
@@ -25,27 +26,22 @@ class ContactsAdapter(
     }
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
-        val contact = contacts[position]
-        holder.nameTextView.text = contact.name
-        holder.phoneTextView.text = contact.phoneNumber
-
-        // Load profile image using Glide
-        Glide.with(holder.itemView.context)
-            .load(contact.profileImageUrl)
-            .placeholder(R.drawable.profile_placeholder) // Ensure this drawable exists in your project
-            .error(R.drawable.profile_placeholder) // Use the same placeholder for errors
-            .circleCrop() // Make the image circular
-            .into(holder.profileImageView)
-
-        // Set item click listener
-        holder.itemView.setOnClickListener { onContactClick(contact) }
+        val user = contacts[position]
+        holder.bind(user)
+        holder.itemView.setOnClickListener { onContactClick(user) }
     }
 
-    override fun getItemCount() = contacts.size
+    override fun getItemCount(): Int = contacts.size
 
-    fun updateContacts(newContacts: List<Contact>) {
-        contacts.clear()
-        contacts.addAll(newContacts)
-        notifyDataSetChanged()
+    class ContactViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val nameTextView: TextView = itemView.findViewById(R.id.contactName)
+        private val phoneTextView: TextView = itemView.findViewById(R.id.contactPhone)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.contactImageView)
+
+        fun bind(user: User) {
+            nameTextView.text = user.name
+            phoneTextView.text = user.phoneNumber
+            Glide.with(itemView.context).load(user.profilePictureUrl).into(profileImageView)
+        }
     }
 }

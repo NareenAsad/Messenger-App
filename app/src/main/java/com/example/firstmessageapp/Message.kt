@@ -1,6 +1,7 @@
 package com.example.firstmessageapp
 
 data class Message(
-    val text: String = "",
-    val senderId: String = ""
+    val senderId: String = "",
+    val messageText: String = "",
+    val timestamp: Long = System.currentTimeMillis()
 )
