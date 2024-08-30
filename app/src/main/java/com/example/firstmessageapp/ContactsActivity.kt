@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -80,7 +81,9 @@ class ContactsActivity : AppCompatActivity() {
                 newContactsList.add(user)
             }
             contactsAdapter.updateContacts(newContactsList)
+            Log.d("ContactsActivity", "Users loaded: ${newContactsList.size}")
         }.addOnFailureListener { exception ->
+            Log.e("ContactsActivity", "Failed to load contacts", exception)
             Toast.makeText(this, "Failed to load contacts: ${exception.message}", Toast.LENGTH_SHORT).show()
         }
     }
