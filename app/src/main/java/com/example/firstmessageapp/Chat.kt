@@ -1,9 +1,10 @@
 package com.example.firstmessageapp
 
-data class Chat(val name: String,
-                val lastMessage: String,
-                val timestamp: String,
-                val unreadCount: Int,
-                val profileImageUrl: String?,
-                val uid: String
-    )
+data class Chat(
+    val name: String? = null,
+    val message: String? = null,
+    val time: String? = null,
+    val unreadCount: Int = 0,
+    val profileImageUrl: String? = null,
+    val userId: String? = null
+)

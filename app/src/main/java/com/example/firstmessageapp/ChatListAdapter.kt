@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import de.hdodenhof.circleimageview.CircleImageView
 import com.squareup.picasso.Picasso
 
-class ChatListAdapter(private val chats: List<Chat>) : RecyclerView.Adapter<ChatListAdapter.ChatViewHolder>() {
+class ChatListAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<ChatListAdapter.ChatViewHolder>() {
 
     class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: CircleImageView = itemView.findViewById(R.id.imgProfile)
@@ -50,4 +50,9 @@ class ChatListAdapter(private val chats: List<Chat>) : RecyclerView.Adapter<Chat
     }
 
     override fun getItemCount(): Int = chats.size
+
+    fun updateChats(newChats: List<Chat>) {
+        chats = newChats
+        notifyDataSetChanged()
+    }
 }

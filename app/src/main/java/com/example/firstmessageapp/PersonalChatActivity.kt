@@ -94,16 +94,21 @@ class PersonalChatActivity : AppCompatActivity() {
 
         // Send a new message
         sendButton.setOnClickListener {
-            val message = messageBox.text.toString()
-            val messageObject = Message(message, senderUid!!)
+            val message = messageBox.text.toString().trim()
 
-            mDbRef.child("chats").child(senderRoom!!).child("messages").push()
-                .setValue(messageObject)
-                .addOnSuccessListener {
-                    mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
-                        .setValue(messageObject)
-                }
-            messageBox.setText("")
+            if (message.isNotEmpty()) {
+                val messageObject = Message(message, senderUid!!)
+
+                // Push message to the sender's chat room
+                mDbRef.child("chats").child(senderRoom!!).child("messages").push()
+                    .setValue(messageObject)
+                    .addOnSuccessListener {
+                        // Push the same message to the receiver's chat room
+                        mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
+                            .setValue(messageObject)
+                    }
+                messageBox.setText("")
+            }
         }
     }
 }

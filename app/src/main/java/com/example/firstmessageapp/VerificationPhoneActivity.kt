@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.TimeUnit
 
 class VerificationPhoneActivity : AppCompatActivity() {
@@ -67,10 +68,33 @@ class VerificationPhoneActivity : AppCompatActivity() {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    // Sign-in success, update UI or navigate to another activity
+                    // Sign-in success
+                    val user = auth.currentUser
+                    if (user != null) {
+                        // Store user information in Firestore
+                        storeUserInformation(user.phoneNumber)
+                    }
                 } else {
                     // Sign-in failed, display a message to the user
                 }
+            }
+    }
+
+    private fun storeUserInformation(phoneNumber: String?) {
+        val db = FirebaseFirestore.getInstance()
+        val userId = auth.currentUser?.uid ?: return
+
+        val userMap = mapOf(
+            "phoneNumber" to phoneNumber
+        )
+
+        db.collection("users").document(userId)
+            .set(userMap)
+            .addOnSuccessListener {
+                // Successfully stored user information
+            }
+            .addOnFailureListener { e ->
+                Log.d("storeUserInfo", "Error storing user information: ${e.message}")
             }
     }
 }

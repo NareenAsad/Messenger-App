@@ -1,15 +1,18 @@
 package com.example.firstmessageapp
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ChatsActivity : AppCompatActivity() {
 
@@ -20,6 +23,12 @@ class ChatsActivity : AppCompatActivity() {
     private lateinit var searchBar: EditText
     private lateinit var rvChatList: RecyclerView
     private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var stories: MutableList<Story>
+    private lateinit var firestore: FirebaseFirestore
+    private lateinit var chatListAdapter: ChatListAdapter
+
+    // Request code for media selection
+    private val PICK_MEDIA_REQUEST_CODE = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +42,9 @@ class ChatsActivity : AppCompatActivity() {
         searchBar = findViewById(R.id.search_bar)
         rvChatList = findViewById(R.id.rvChatList)
         bottomNavigation = findViewById(R.id.bottom_navigation)
+
+        // Initialize Firestore
+        firestore = FirebaseFirestore.getInstance()
 
         // Set up RecyclerViews
         setupStoriesRecyclerView()
@@ -54,10 +66,9 @@ class ChatsActivity : AppCompatActivity() {
     }
 
     private fun setupStoriesRecyclerView() {
-        val stories = listOf(
+        // Initialize the mutable list of stories
+        stories = mutableListOf(
             Story("Your Story", "https://example.com/your_story.jpg"),
-            Story("John's Story", "https://example.com/john_story.jpg"),
-            Story("Jane's Story", "https://example.com/jane_story.jpg")
             // Add more stories as needed
         )
 
@@ -66,16 +77,30 @@ class ChatsActivity : AppCompatActivity() {
     }
 
     private fun setupChatListRecyclerView() {
-        val chats = listOf(
-            Chat("John Doe", "Hey, how's it going?", "10:30 AM", 2, "https://example.com/john_profile.jpg", "uid_1"),
-            Chat("Jane Smith", "Let's meet up later.", "9:45 AM", 0, "https://example.com/jane_profile.jpg", "uid_2"),
-            Chat("Alice Johnson", "Did you get my email?", "8:20 AM", 5, "https://example.com/alice_profile.jpg", "uid_3")
-            // Add more chats as needed
-        )
-
+        // Initialize the RecyclerView
         rvChatList.layoutManager = LinearLayoutManager(this)
-        rvChatList.adapter = ChatListAdapter(chats)
+        chatListAdapter = ChatListAdapter(emptyList()) // Start with an empty list
+        rvChatList.adapter = chatListAdapter
+
+        // Fetch chat data from Firestore
+        fetchChatsFromFirebase()
     }
+
+    private fun fetchChatsFromFirebase() {
+        firestore.collection("chats")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                Log.d("ChatsActivity", "Query Snapshot: ${querySnapshot.documents}")
+                val chatList = querySnapshot.documents.mapNotNull { document ->
+                    document.toObject(Chat::class.java)
+                }
+                chatListAdapter.updateChats(chatList)
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(this, "Failed to load chats: ${exception.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 
     private fun setupBottomNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener { menuItem ->
@@ -97,9 +122,44 @@ class ChatsActivity : AppCompatActivity() {
         }
     }
 
+    private fun addStory(newStory: Story) {
+        // Add the new story to the list
+        stories.add(newStory)
+
+        // Notify the adapter that a new item has been added
+        rvStories.adapter?.notifyItemInserted(stories.size - 1)
+    }
+
     private fun showMenuOptions() {
         // Implement a popup menu or other menu options as needed
         // Example: Showing a simple toast message
         Toast.makeText(this, "Menu clicked!", Toast.LENGTH_SHORT).show()
+    }
+
+    // Method to launch media picker when a story is clicked
+    fun selectMediaForStory(position: Int) {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/* video/*"
+        startActivityForResult(Intent.createChooser(intent, "Select Picture or Video"), PICK_MEDIA_REQUEST_CODE)
+    }
+
+    // Handle the result of the media selection
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_MEDIA_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            val selectedMediaUri: Uri? = data.data
+
+            // Check if the selected media URI is not null
+            if (selectedMediaUri != null) {
+                // Create a new Story with the selected media URI
+                val newStory = Story("New Story", selectedMediaUri.toString())
+
+                // Add the new story to the list
+                addStory(newStory)
+
+                // Optionally, show a message to the user
+                Toast.makeText(this, "New story added: $selectedMediaUri", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

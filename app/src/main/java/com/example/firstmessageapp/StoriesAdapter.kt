@@ -13,6 +13,16 @@ class StoriesAdapter(private val stories: List<Story>) : RecyclerView.Adapter<St
     class StoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val storyImage: CircleImageView = itemView.findViewById(R.id.imgStory)
         val storyLabel: TextView = itemView.findViewById(R.id.tvStoryLabel)
+
+        init {
+            itemView.setOnClickListener {
+                // Trigger the image/video selection process
+                val context = itemView.context
+                if (context is ChatsActivity) {
+                    context.selectMediaForStory(adapterPosition)
+                }
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StoryViewHolder {
