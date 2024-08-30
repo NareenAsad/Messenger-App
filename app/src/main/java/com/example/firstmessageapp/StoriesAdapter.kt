@@ -18,7 +18,7 @@ class StoriesAdapter(private val stories: List<Story>) : RecyclerView.Adapter<St
             itemView.setOnClickListener {
                 // Trigger the image/video selection process
                 val context = itemView.context
-                if (context is ChatsActivity) {
+                if (context is ChatActivity) {
                     context.selectMediaForStory(adapterPosition)
                 }
             }
