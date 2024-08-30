@@ -1,21 +1,15 @@
 package com.example.firstmessageapp
 
 import android.app.AlertDialog
-import android.content.DialogInterface
-import android.view.View
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -24,22 +18,18 @@ class ContactsActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
     private lateinit var contactsAdapter: ContactsAdapter
     private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact)
 
-        // Initialize Firestore
+        // Initialize Firestore and Firebase Auth
         db = Firebase.firestore
+        auth = FirebaseAuth.getInstance()
 
         // Initialize RecyclerView and Adapter
-        val contactsRecyclerView: RecyclerView = findViewById(R.id.contactsRecyclerView)
-        contactsAdapter = ContactsAdapter(mutableListOf()) { contact ->
-            // Handle contact click
-            startChat(contact)
-        }
-        contactsRecyclerView.adapter = contactsAdapter
-        contactsRecyclerView.layoutManager = LinearLayoutManager(this)
+        setupRecyclerView()
 
         // Load Contacts from Firestore
         loadContacts()
@@ -56,6 +46,7 @@ class ContactsActivity : AppCompatActivity() {
     }
 
     private fun saveContact(contact: Contact) {
+        // Saving contact to Firestore
         db.collection("users")
             .add(contact)
             .addOnSuccessListener { documentReference ->
@@ -68,15 +59,19 @@ class ContactsActivity : AppCompatActivity() {
     }
 
     private fun loadContacts() {
-        val db = FirebaseFirestore.getInstance()
+        val currentUserId = auth.currentUser?.uid ?: return
 
         db.collection("users")
             .get()
             .addOnSuccessListener { result ->
-                val contacts = result.map { document ->
-                    val phoneNumber = document.getString("phoneNumber") ?: ""
+                val contacts = result.mapNotNull { document ->
                     val userId = document.id
-                    Contact(userId, phoneNumber, phoneNumber) // Assuming name and phone number are the same
+                    if (userId != currentUserId) {
+                        val name = document.getString("name") ?: ""
+                        val phoneNumber = document.getString("phoneNumber") ?: ""
+                        val profileImageUrl = document.getString("profileImageUrl")
+                        Contact(userId, name, phoneNumber, profileImageUrl)
+                    } else null
                 }
                 contactsAdapter.updateContacts(contacts)
             }
@@ -85,11 +80,19 @@ class ContactsActivity : AppCompatActivity() {
             }
     }
 
+    private fun setupRecyclerView() {
+        val contactsRecyclerView: RecyclerView = findViewById(R.id.contactsRecyclerView)
+        contactsAdapter = ContactsAdapter(mutableListOf()) { contact ->
+            startChat(contact)
+        }
+        contactsRecyclerView.adapter = contactsAdapter
+        contactsRecyclerView.layoutManager = LinearLayoutManager(this)
+    }
 
     private fun startChat(contact: Contact) {
         val intent = Intent(this, PersonalChatActivity::class.java)
-        intent.putExtra("contactId", contact.id)
         intent.putExtra("contactName", contact.name)
+        intent.putExtra("contactId", contact.id)
         startActivity(intent)
     }
 
@@ -97,19 +100,18 @@ class ContactsActivity : AppCompatActivity() {
         bottomNavigation.setOnNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.navigation_contacts -> {
-                    val intent = Intent(this, ContactsActivity::class.java)
-                    startActivity(intent)
-                    return@setOnNavigationItemSelectedListener true
+                    // Current activity, no need to restart
+                    true
                 }
                 R.id.navigation_search -> {
                     val intent = Intent(this, ChatsActivity::class.java)
                     startActivity(intent)
-                    return@setOnNavigationItemSelectedListener true
+                    true
                 }
                 R.id.navigation_more -> {
                     val intent = Intent(this, MoreActivity::class.java)
                     startActivity(intent)
-                    return@setOnNavigationItemSelectedListener true
+                    true
                 }
                 else -> false
             }

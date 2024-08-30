@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -42,30 +43,7 @@ class MoreActivity : AppCompatActivity() {
         database = FirebaseDatabase.getInstance().getReference("Users")
 
         // Fetch and display user info
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            val userId = currentUser.uid
-            database.child(userId).addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val name = snapshot.child("name").getValue(String::class.java)
-                    val phone = snapshot.child("phone").getValue(String::class.java)
-                    val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java)
-
-                    nameTextView.text = name ?: "Unknown"
-                    phoneTextView.text = phone ?: "No phone number"
-
-                    // Load profile image using Glide
-                    Glide.with(this@MoreActivity)
-                        .load(profileImageUrl)
-                        .placeholder(R.drawable.profile)
-                        .into(profileImageView)
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@MoreActivity, "Failed to load user data", Toast.LENGTH_SHORT).show()
-                }
-            })
-        }
+        fetchUserData()
 
         val settingsItems = listOf(
             "Account",
@@ -100,6 +78,35 @@ class MoreActivity : AppCompatActivity() {
         setupBottomNavigation()
     }
 
+    private fun fetchUserData() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+
+        userRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val name = snapshot.child("name").getValue(String::class.java)
+                val phone = snapshot.child("phone").getValue(String::class.java)
+                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java)
+
+                nameTextView.text = name ?: "Set your name"
+                phoneTextView.text = phone ?: "Set your phone number"
+
+                if (profileImageUrl != null) {
+                    Glide.with(this@MoreActivity)
+                        .load(profileImageUrl)
+                        .placeholder(R.drawable.profile)
+                        .into(profileImageView)
+                } else {
+                    profileImageView.setImageResource(R.drawable.profile)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@MoreActivity, "Failed to load user data", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     private fun setupBottomNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -117,8 +124,6 @@ class MoreActivity : AppCompatActivity() {
                 }
                 R.id.navigation_more -> {
                     // Navigate to MoreActivity
-                    val intent = Intent(this, MoreActivity::class.java)
-                    startActivity(intent)
                     true
                 }
                 else -> false

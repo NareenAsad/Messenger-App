@@ -40,10 +40,8 @@
         android:shadowDy="4"
         android:shadowColor="#66000000"
         android:textSize="20sp"
-        android:layout_margin="20dp"
-        tools:layout_editor_absoluteX="47dp"
-        tools:layout_editor_absoluteY="448dp"
-        app:layout_constraintStart_toStartOf="@id/imageView2"
+        android:layout_margin="50dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/imageView2"
         tools:ignore="MissingConstraints,UnusedAttribute" />
 

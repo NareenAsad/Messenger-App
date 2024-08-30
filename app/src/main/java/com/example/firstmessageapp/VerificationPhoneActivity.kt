@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.TimeUnit
 
@@ -45,7 +46,7 @@ class VerificationPhoneActivity : AppCompatActivity() {
             .setActivity(this)
             .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                    signInWithPhoneAuthCredential(credential)
+                    signInWithPhoneAuthCredential(credential, phoneNumber)
                 }
 
                 override fun onVerificationFailed(e: FirebaseException) {
@@ -64,23 +65,25 @@ class VerificationPhoneActivity : AppCompatActivity() {
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
 
-    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential, phoneNumber: String) {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign-in success
                     val user = auth.currentUser
                     if (user != null) {
-                        // Store user information in Firestore
-                        storeUserInformation(user.phoneNumber)
+                        // Store user information in Firestore and Realtime Database
+                        storeUserInformation(phoneNumber)
+                        onPhoneVerificationSuccess(phoneNumber)
                     }
                 } else {
                     // Sign-in failed, display a message to the user
+                    Log.d("signIn", "signInWithCredential:failure", task.exception)
                 }
             }
     }
 
-    private fun storeUserInformation(phoneNumber: String?) {
+    private fun storeUserInformation(phoneNumber: String) {
         val db = FirebaseFirestore.getInstance()
         val userId = auth.currentUser?.uid ?: return
 
@@ -91,10 +94,29 @@ class VerificationPhoneActivity : AppCompatActivity() {
         db.collection("users").document(userId)
             .set(userMap)
             .addOnSuccessListener {
-                // Successfully stored user information
+                Log.d("storeUserInfo", "User information stored successfully in Firestore")
             }
             .addOnFailureListener { e ->
-                Log.d("storeUserInfo", "Error storing user information: ${e.message}")
+                Log.d("storeUserInfo", "Error storing user information in Firestore: ${e.message}")
             }
+    }
+
+    private fun onPhoneVerificationSuccess(phoneNumber: String) {
+        val user = FirebaseAuth.getInstance().currentUser
+        val userId = user?.uid
+        if (userId != null) {
+            val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+            userRef.child("phone").setValue(phoneNumber)
+                .addOnSuccessListener {
+                    Log.d("storeUserInfo", "Phone number stored successfully in Realtime Database")
+                    // Navigate to the next activity (e.g., ProfileActivity or MainActivity)
+                    val intent = Intent(this@VerificationPhoneActivity, MoreActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                .addOnFailureListener { e ->
+                    Log.d("storeUserInfo", "Error storing phone number in Realtime Database: ${e.message}")
+                }
+        }
     }
 }

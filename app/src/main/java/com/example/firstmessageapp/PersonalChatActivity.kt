@@ -32,9 +32,11 @@ class PersonalChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_personal_chat)
 
         // Retrieve data from intent
-        val name = intent.getStringExtra("name")
-        val receiverUid = intent.getStringExtra("uid")
+        val name = intent.getStringExtra("contactName")
+        val receiverUid = intent.getStringExtra("contactId")
         val senderUid = FirebaseAuth.getInstance().currentUser?.uid
+
+        // Initialize Firebase Database
         mDbRef = FirebaseDatabase.getInstance().reference
 
         senderRoom = receiverUid + senderUid
@@ -63,15 +65,9 @@ class PersonalChatActivity : AppCompatActivity() {
             finish()
         }
 
-        // Handle search button click (Add your search logic here)
-        icSearch.setOnClickListener {
-            // Implement search functionality here
-        }
-
-        // Handle menu button click (Add your menu logic here)
-        icMenu.setOnClickListener {
-            // Implement menu functionality here
-        }
+        // Handle search and menu button clicks
+        icSearch.setOnClickListener { /* Implement search functionality */ }
+        icMenu.setOnClickListener { /* Implement menu functionality */ }
 
         // Listen for new messages
         mDbRef.child("chats").child(senderRoom!!).child("messages")
@@ -95,7 +91,6 @@ class PersonalChatActivity : AppCompatActivity() {
         // Send a new message
         sendButton.setOnClickListener {
             val message = messageBox.text.toString().trim()
-
             if (message.isNotEmpty()) {
                 val messageObject = Message(message, senderUid!!)
 
