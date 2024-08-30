@@ -109,10 +109,7 @@ class ChatActivity : AppCompatActivity() {
                     startActivity(Intent(this, ContactsActivity::class.java))
                     true
                 }
-                R.id.navigation_search -> {
-                    startActivity(Intent(this, ChatActivity::class.java))
-                    true
-                }
+                R.id.navigation_search -> true
                 R.id.navigation_more -> {
                     startActivity(Intent(this, MoreActivity::class.java))
                     true

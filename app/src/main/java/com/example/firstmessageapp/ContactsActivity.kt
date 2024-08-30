@@ -34,7 +34,7 @@ class ContactsActivity : AppCompatActivity() {
         contactsList = ArrayList()
 
         contactsAdapter = ContactsAdapter(contactsList) { user ->
-            val intent = Intent(this, ChatsActivity::class.java)
+            val intent = Intent(this, ChatActivity::class.java)
             intent.putExtra("userId", user.userId)
             startActivity(intent)
         }
@@ -58,7 +58,7 @@ class ContactsActivity : AppCompatActivity() {
             when (menuItem.itemId) {
                 R.id.navigation_contacts -> true
                 R.id.navigation_search -> {
-                    val intent = Intent(this, ChatsActivity::class.java)
+                    val intent = Intent(this, ChatActivity::class.java)
                     startActivity(intent)
                     true
                 }

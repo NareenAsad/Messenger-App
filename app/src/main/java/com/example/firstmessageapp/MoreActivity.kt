@@ -118,14 +118,11 @@ class MoreActivity : AppCompatActivity() {
                 }
                 R.id.navigation_search -> {
                     // Navigate to ChatActivity
-                    val intent = Intent(this, ChatsActivity::class.java)
+                    val intent = Intent(this, ChatActivity::class.java)
                     startActivity(intent)
                     true
                 }
-                R.id.navigation_more -> {
-                    // Navigate to MoreActivity
-                    true
-                }
+                R.id.navigation_more -> true
                 else -> false
             }
         }
