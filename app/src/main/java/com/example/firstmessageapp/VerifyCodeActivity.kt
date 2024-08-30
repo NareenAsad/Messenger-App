@@ -67,7 +67,7 @@ class VerifyCodeActivity : AppCompatActivity() {
                     val user = task.result?.user
                     if (user != null) {
                         // Navigate to the Contacts screen
-                        startActivity(Intent(this, ContactsActivity::class.java))
+                        startActivity(Intent(this, ProfileActivity::class.java))
                         finish()
                     }
                 } else {
