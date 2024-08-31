@@ -23,6 +23,9 @@ class PersonalChatActivity : AppCompatActivity() {
     private lateinit var chatUserId: String
     private lateinit var chatUsernameTextView: TextView
 
+    private var senderRoom: String? = null
+    private var receiverRoom: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_personal_chat)
@@ -35,6 +38,10 @@ class PersonalChatActivity : AppCompatActivity() {
 
         chatUserId = intent.getStringExtra("userId") ?: ""
         currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+        // Setup sender and receiver rooms for chat
+        senderRoom = "$currentUserId-$chatUserId"
+        receiverRoom = "$chatUserId-$currentUserId"
 
         chatAdapter = PersonalChatAdapter(messagesList, currentUserId)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -54,16 +61,19 @@ class PersonalChatActivity : AppCompatActivity() {
     }
 
     private fun sendMessage(messageText: String) {
-        val timestamp = System.currentTimeMillis().toString() // Assuming you want a simple timestamp
+        val timestamp = System.currentTimeMillis().toString()
         val message = Message(currentUserId, messageText, timestamp)
-        val chatId = getChatId(currentUserId, chatUserId)
-        database.child("chats").child(chatId).push().setValue(message)
-        messageEditText.text.clear() // Clear the message box after sending
+
+        // Store message in the sender's room
+        database.child("chats").child(senderRoom!!).push().setValue(message).addOnSuccessListener {
+            // Also store the message in the receiver's room
+            database.child("chats").child(receiverRoom!!).push().setValue(message)
+        }
+        messageEditText.text.clear()
     }
 
     private fun listenForMessages() {
-        val chatId = getChatId(currentUserId, chatUserId)
-        database.child("chats").child(chatId).addValueEventListener(object : ValueEventListener {
+        database.child("chats").child(senderRoom!!).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 messagesList.clear()
                 for (dataSnapshot in snapshot.children) {
@@ -93,9 +103,5 @@ class PersonalChatActivity : AppCompatActivity() {
                 Toast.makeText(this@PersonalChatActivity, "Failed to load user details: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
-    }
-
-    private fun getChatId(userId1: String, userId2: String): String {
-        return if (userId1 < userId2) "$userId1-$userId2" else "$userId2-$userId1"
     }
 }
