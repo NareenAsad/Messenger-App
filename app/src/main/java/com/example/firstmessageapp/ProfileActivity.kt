@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -54,12 +53,12 @@ class ProfileActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
-            selectedPhotoUri = data.data
-            Log.d(TAG, "Photo was selected")
+            selectedPhotoUri = data.data // Set the selected URI
 
-            // Load and display the selected image
             selectedPhotoUri?.let { uri ->
-                Picasso.get().load(uri).into(binding.profileImage)
+                Picasso.get().load(uri).into(binding.profileImage) // Display the image using Picasso
+            } ?: run {
+                Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -88,20 +87,24 @@ class ProfileActivity : AppCompatActivity() {
         val filename = UUID.randomUUID().toString()
         val ref = storage.getReference("/profile_images/$filename")
 
-        ref.putFile(selectedPhotoUri!!)
-            .addOnSuccessListener { taskSnapshot ->
-                Log.d(TAG, "Successfully uploaded image: ${taskSnapshot.metadata?.path}")
+        selectedPhotoUri?.let { uri ->
+            ref.putFile(uri)
+                .addOnSuccessListener { taskSnapshot ->
+                    Log.d(TAG, "Successfully uploaded image: ${taskSnapshot.metadata?.path}")
 
-                ref.downloadUrl.addOnSuccessListener { uri ->
-                    Log.d(TAG, "File Location: $uri")
-                    saveUserToFirebaseDatabase(firstName, lastName, uri.toString())
+                    ref.downloadUrl.addOnSuccessListener { uri ->
+                        Log.d(TAG, "File Location: $uri")
+                        saveUserToFirebaseDatabase(firstName, lastName, uri.toString())
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to upload image to storage: ${e.message}")
-                Toast.makeText(this, "Failed to upload image: ${e.message}", Toast.LENGTH_LONG).show()
-                // binding.loadingView.visibility = View.GONE
-            }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to upload image to storage: ${e.message}")
+                    Toast.makeText(this, "Failed to upload image: ${e.message}", Toast.LENGTH_LONG).show()
+                    // binding.loadingView.visibility = View.GONE
+                }
+        } ?: run {
+            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun saveUserToFirebaseDatabase(firstName: String, lastName: String, profileImageUrl: String) {

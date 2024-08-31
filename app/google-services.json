@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "453885849443",
-    "project_id": "msgapp-35107",
-    "storage_bucket": "msgapp-35107.appspot.com"
+    "project_number": "923101414899",
+    "firebase_url": "https://mychatappu-default-rtdb.firebaseio.com",
+    "project_id": "mychatappu",
+    "storage_bucket": "mychatappu.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:453885849443:android:d71078389ad1278268ad56",
+        "mobilesdk_app_id": "1:923101414899:android:e7ff95c6ce5e252ba8be86",
         "android_client_info": {
           "package_name": "com.example.firstmessageapp"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAc1-W99QuOeLPLCmKZ0ehp69Hf7kEK3uo"
+          "current_key": "AIzaSyDwu1AQp-pPR6r2D8faBuH2QY3zR0BiDb4"
         }
       ],
       "services": {

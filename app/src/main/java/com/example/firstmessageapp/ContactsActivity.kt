@@ -14,9 +14,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 
 class ContactsActivity : AppCompatActivity() {
 
@@ -24,7 +21,7 @@ class ContactsActivity : AppCompatActivity() {
     private lateinit var contactsAdapter: ContactsAdapter
     private lateinit var contactsList: ArrayList<User>
     private lateinit var bottomNavigation: BottomNavigationView
-    private lateinit var firestore: FirebaseFirestore
+    private val currentUserId: String by lazy { FirebaseAuth.getInstance().uid ?: "" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,15 +32,14 @@ class ContactsActivity : AppCompatActivity() {
         contactsList = ArrayList()
 
         contactsAdapter = ContactsAdapter(contactsList) { user ->
-            val intent = Intent(this, ChatActivity::class.java)
+            val intent = Intent(this, PersonalChatActivity::class.java)
             intent.putExtra("userId", user.userId)
             startActivity(intent)
         }
         recyclerView.adapter = contactsAdapter
 
-        firestore = Firebase.firestore // Initialize Firestore
-
-        fetchUsersFromFirestore()
+        // Fetch users from Realtime Database
+        fetchUsersFromDatabase()
 
         // Initialize and set up Bottom Navigation
         bottomNavigation = findViewById(R.id.bottom_navigation)
@@ -73,19 +69,28 @@ class ContactsActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchUsersFromFirestore() {
-        firestore.collection("users").get().addOnSuccessListener { result ->
-            val newContactsList = ArrayList<User>()
-            for (document in result) {
-                val user = document.toObject(User::class.java)
-                newContactsList.add(user)
+    private fun fetchUsersFromDatabase() {
+        val database = FirebaseDatabase.getInstance().reference
+        val usersRef = database.child("users")
+
+        usersRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newContactsList = ArrayList<User>()
+                for (dataSnapshot in snapshot.children) {
+                    val user = dataSnapshot.getValue(User::class.java)
+                    if (user != null && user.userId != currentUserId) {
+                        newContactsList.add(user)
+                    }
+                }
+                contactsAdapter.updateContacts(newContactsList)
+                Log.d("ContactsActivity", "Users loaded: ${newContactsList.size}")
             }
-            contactsAdapter.updateContacts(newContactsList)
-            Log.d("ContactsActivity", "Users loaded: ${newContactsList.size}")
-        }.addOnFailureListener { exception ->
-            Log.e("ContactsActivity", "Failed to load contacts", exception)
-            Toast.makeText(this, "Failed to load contacts: ${exception.message}", Toast.LENGTH_SHORT).show()
-        }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("ContactsActivity", "Failed to load contacts", error.toException())
+                Toast.makeText(this@ContactsActivity, "Failed to load contacts: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun setupSearchFunctionality() {
@@ -103,7 +108,7 @@ class ContactsActivity : AppCompatActivity() {
 
     private fun filterContacts(query: String) {
         val filteredList = contactsList.filter {
-            it.name.contains(query, ignoreCase = true) || it.phoneNumber.contains(query)
+            it.name.contains(query, ignoreCase = true)
         }
         contactsAdapter.updateContacts(filteredList)
     }
@@ -124,20 +129,20 @@ class ContactsActivity : AppCompatActivity() {
         val alertDialog = dialogBuilder.show()
 
         val nameEditText: EditText = dialogView.findViewById(R.id.editTextName)
-        val phoneEditText: EditText = dialogView.findViewById(R.id.editTextPhone)
         val saveButton: Button = dialogView.findViewById(R.id.buttonSave)
 
         saveButton.setOnClickListener {
             val name = nameEditText.text.toString()
-            val phone = phoneEditText.text.toString()
 
-            if (name.isNotEmpty() && phone.isNotEmpty()) {
+            if (name.isNotEmpty()) {
                 val newUser = User(
                     userId = FirebaseAuth.getInstance().uid ?: "",
                     name = name,
-                    phoneNumber = phone
+                    profileImageUrl = "", // Provide default or empty URL if not available
+                    isOnline = false, // Default value, update as needed
+                    lastSeen = null  // Default value, update as needed
                 )
-                saveUserToFirestore(newUser)
+                saveUserToDatabase(newUser)
                 alertDialog.dismiss()
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
@@ -145,8 +150,9 @@ class ContactsActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveUserToFirestore(user: User) {
-        firestore.collection("users").document(user.userId).set(user).addOnCompleteListener { task ->
+    private fun saveUserToDatabase(user: User) {
+        val database = FirebaseDatabase.getInstance().reference
+        database.child("users").child(user.userId).setValue(user).addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 Toast.makeText(this, "Contact added successfully", Toast.LENGTH_SHORT).show()
             } else {

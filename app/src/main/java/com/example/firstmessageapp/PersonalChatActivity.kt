@@ -1,26 +1,27 @@
 package com.example.firstmessageapp
 
 import android.os.Bundle
-import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.database.DatabaseReference
 
 class PersonalChatActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var chatAdapter: PersonalChatAdapter // Corrected this line
+    private lateinit var chatAdapter: PersonalChatAdapter
     private lateinit var messageEditText: EditText
-    private lateinit var sendButton: Button
+    private lateinit var sendButton: ImageView
     private lateinit var messagesList: ArrayList<Message>
     private lateinit var database: DatabaseReference
     private lateinit var currentUserId: String
     private lateinit var chatUserId: String
+    private lateinit var chatUsernameTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,12 +30,13 @@ class PersonalChatActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.chatRecyclerView)
         messageEditText = findViewById(R.id.messageBox)
         sendButton = findViewById(R.id.sentButton)
+        chatUsernameTextView = findViewById(R.id.chat_username)
         messagesList = ArrayList()
 
-        chatUserId = intent.getStringExtra("userId")!!
+        chatUserId = intent.getStringExtra("userId") ?: ""
         currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-        chatAdapter = PersonalChatAdapter(messagesList) // Corrected this line
+        chatAdapter = PersonalChatAdapter(messagesList, currentUserId)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = chatAdapter
 
@@ -48,10 +50,12 @@ class PersonalChatActivity : AppCompatActivity() {
         }
 
         listenForMessages()
+        loadChatUserDetails()
     }
 
     private fun sendMessage(messageText: String) {
-        val message = Message(currentUserId, messageText)
+        val timestamp = System.currentTimeMillis().toString() // Assuming you want a simple timestamp
+        val message = Message(currentUserId, messageText, timestamp)
         val chatId = getChatId(currentUserId, chatUserId)
         database.child("chats").child(chatId).push().setValue(message)
         messageEditText.text.clear() // Clear the message box after sending
@@ -64,9 +68,7 @@ class PersonalChatActivity : AppCompatActivity() {
                 messagesList.clear()
                 for (dataSnapshot in snapshot.children) {
                     val message = dataSnapshot.getValue(Message::class.java)
-                    if (message != null) {
-                        messagesList.add(message)
-                    }
+                    message?.let { messagesList.add(it) }
                 }
                 chatAdapter.notifyDataSetChanged()
                 recyclerView.scrollToPosition(messagesList.size - 1)
@@ -74,6 +76,21 @@ class PersonalChatActivity : AppCompatActivity() {
 
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(this@PersonalChatActivity, "Failed to load messages: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun loadChatUserDetails() {
+        database.child("users").child(chatUserId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val user = snapshot.getValue(User::class.java)
+                user?.let {
+                    chatUsernameTextView.text = it.name
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@PersonalChatActivity, "Failed to load user details: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }

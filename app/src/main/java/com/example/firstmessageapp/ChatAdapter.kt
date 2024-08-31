@@ -5,9 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import de.hdodenhof.circleimageview.CircleImageView
 import com.squareup.picasso.Picasso
+import de.hdodenhof.circleimageview.CircleImageView
 
 class ChatAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
@@ -27,33 +28,54 @@ class ChatAdapter(private var chats: List<Chat>) : RecyclerView.Adapter<ChatAdap
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val chat = chats[position]
 
-        holder.name.text = chat.name ?: "Unknown"
-        holder.lastMessage.text = chat.lastMessage ?: "No messages"
-        holder.timestamp.text = chat.timestamp ?: "No timestamp"
-        holder.unreadCount.text = chat.unreadCount.toString()
+        with(holder) {
+            name.text = chat.name ?: "Unknown"
+            lastMessage.text = chat.lastMessage ?: "No messages"
+            timestamp.text = chat.timestamp ?: "No timestamp"
+            unreadCount.text = if (chat.unreadCount > 0) chat.unreadCount.toString() else ""
 
-        // Load profile image if available
-        if (chat.profileImageUrl != null) {
-            Picasso.get().load(chat.profileImageUrl).into(holder.profileImage)
-        } else {
-            holder.profileImage.setImageResource(R.drawable.profile_placeholder) // Fallback image
-        }
+            Picasso.get()
+                .load(chat.profileImageUrl)
+                .placeholder(R.drawable.profile_placeholder) // Show placeholder while loading
+                .error(R.drawable.profile_placeholder) // Show placeholder on error
+                .into(profileImage)
 
-        // Handle item click to navigate to PersonalChatActivity
-        holder.itemView.setOnClickListener {
-            val context = holder.itemView.context
-            val intent = Intent(context, PersonalChatActivity::class.java).apply {
-                putExtra("name", chat.name)
-                putExtra("uid", chat.userId)
+            itemView.setOnClickListener {
+                val context = itemView.context
+                val intent = Intent(context, PersonalChatActivity::class.java).apply {
+                    putExtra("name", chat.name)
+                    putExtra("uid", chat.userId)
+                }
+                context.startActivity(intent)
             }
-            context.startActivity(intent)
         }
     }
 
     override fun getItemCount(): Int = chats.size
 
     fun updateChats(newChats: List<Chat>) {
+        val diffResult = DiffUtil.calculateDiff(ChatDiffCallback(chats, newChats))
         chats = newChats
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
+    }
+
+    private class ChatDiffCallback(
+        private val oldChats: List<Chat>,
+        private val newChats: List<Chat>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldChats.size
+
+        override fun getNewListSize(): Int = newChats.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldChats[oldItemPosition].userId == newChats[newItemPosition].userId
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val oldChat = oldChats[oldItemPosition]
+            val newChat = newChats[newItemPosition]
+            return oldChat == newChat
+        }
     }
 }

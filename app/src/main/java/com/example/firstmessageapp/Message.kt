@@ -3,5 +3,5 @@ package com.example.firstmessageapp
 data class Message(
     val senderId: String = "",
     val messageText: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: String = ""
 )

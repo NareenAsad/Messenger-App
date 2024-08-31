@@ -6,5 +6,7 @@ data class Chat(
     val timestamp: String? = null, // Correct field name
     val unreadCount: Int = 0,
     val profileImageUrl: String? = null,
-    val userId: String? = null
+    val userId: String? = null,
+    val user1Name: String,
+    val user2Name: String,
 )
