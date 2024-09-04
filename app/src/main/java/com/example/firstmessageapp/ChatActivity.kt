@@ -81,7 +81,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun fetchChatsFromFirebase() {
         val userId = auth.currentUser?.uid ?: return
-        val chatsRef = database.getReference("Chats")
+        val chatsRef = database.getReference("ChatMetadata").child(userId)
 
         chatsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -89,12 +89,9 @@ class ChatActivity : AppCompatActivity() {
                 for (chatSnapshot in snapshot.children) {
                     val chat = chatSnapshot.getValue(Chat::class.java)
                     chat?.let {
-                        if (it.user1Name == userId || it.user2Name == userId) {
-                            allChats.add(it)
-                        }
+                        allChats.add(it)
                     }
                 }
-                // Initially show all chats
                 chatListAdapter.updateChats(allChats)
             }
 

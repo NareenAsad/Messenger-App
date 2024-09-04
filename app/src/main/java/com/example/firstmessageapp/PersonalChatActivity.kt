@@ -68,8 +68,25 @@ class PersonalChatActivity : AppCompatActivity() {
         database.child("chats").child(senderRoom!!).push().setValue(message).addOnSuccessListener {
             // Also store the message in the receiver's room
             database.child("chats").child(receiverRoom!!).push().setValue(message)
+
+            // Update chat metadata for the sender
+            updateChatMetadata(currentUserId, chatUserId, messageText, timestamp)
+
+            // Update chat metadata for the receiver
+            updateChatMetadata(chatUserId, currentUserId, messageText, timestamp)
         }
         messageEditText.text.clear()
+    }
+
+    private fun updateChatMetadata(userId: String, otherUserId: String, lastMessage: String, timestamp: String) {
+        val chatMetadata = Chat(
+            name = otherUserId, // You might want to store the other user's name here
+            lastMessage = lastMessage,
+            timestamp = timestamp,
+            user1Name = userId,
+            user2Name = otherUserId
+        )
+        database.child("ChatMetadata").child(userId).child(otherUserId).setValue(chatMetadata)
     }
 
     private fun listenForMessages() {
