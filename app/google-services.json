@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "923101414899",
-    "firebase_url": "https://mychatappu-default-rtdb.firebaseio.com",
-    "project_id": "mychatappu",
-    "storage_bucket": "mychatappu.appspot.com"
+    "project_number": "1069367854389",
+    "firebase_url": "https://finalchatapp-4928b-default-rtdb.firebaseio.com",
+    "project_id": "finalchatapp-4928b",
+    "storage_bucket": "finalchatapp-4928b.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:923101414899:android:e7ff95c6ce5e252ba8be86",
+        "mobilesdk_app_id": "1:1069367854389:android:7d55ce67727fa78c70f87c",
         "android_client_info": {
           "package_name": "com.example.firstmessageapp"
         }
@@ -16,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDwu1AQp-pPR6r2D8faBuH2QY3zR0BiDb4"
+          "current_key": "AIzaSyCvyJB1-UCIWgIvAuNjT7He3yq2ozo6L9o"
         }
       ],
       "services": {
